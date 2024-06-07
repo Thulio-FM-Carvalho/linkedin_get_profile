@@ -1,47 +1,50 @@
 from linkedin_api import Linkedin
 from config import USER, PASSWORD
-from app import app
 
 
 class Service:
+    def __init__(self):
+        self.api = Linkedin(USER, PASSWORD)
+
     def get_profile(self, data):
-        # Authenticate using any Linkedin account credentials
+        try:
+            # Extrair o profile_id da url de perfil
+            profile_id = self.extract_profile_id(data)
 
-        # Encontrar a posição de /in/
-        start_index = data.find('/in/') + len('/in/')
+            # Autenticar e buscar o perfil de acordo com o ID do perfil
+            profile = self.api.get_profile(profile_id)
+            contact_info = self.api.get_profile_contact_info(profile_id)
 
-        # Extrair tudo após /in/
-        result = data[start_index:]
+            # Criar o perfil formatado
+            profile_data = self.format_profile(profile, contact_info)
+            print(profile_data)
+            return profile_data
 
-        # Remover a barra final, se houver
-        if result.endswith('/'):
-            profile_id = result[:-1]
+        except Exception as e:
+            print(f"Erro ao obter o perfil: {e}")
+            return {'erro': str(e)}
 
-        api = Linkedin(USER, PASSWORD)
-        print(profile_id)
-        # GET a profile
-        profile = api.get_profile(profile_id)
-        contact_info = api.get_profile_contact_info(profile_id)
-        print(profile)
+    # função responsável por extrar o ID da URL do perfil do usuário
+    def extract_profile_id(self, url):
+        start_index = url.find('/in/') + len('/in/')
+        end_index = url.find('/', start_index)
+        if end_index == -1:
+            end_index = None
+        return url[start_index:end_index]
 
-        nome = profile['firstName'] + " " + profile['lastName']
-        organizacao = profile['experience'][0]['companyName']
-        funcao = profile['experience'][0]['title']
-        email = contact_info['email_address']
-        if contact_info['phone_numbers']:
-            celular = contact_info['phone_numbers'][0]['number']
-        else:
-            celular = "N/A."
-
-
-        linkedin = 'www.linkedin.com/in/' + profile['public_id']
-        cidade = profile['geoLocationName'].split(',')[0].strip()
-        estado = profile['geoLocationName'].split(',')[1].strip()
-
-        print(nome, organizacao, funcao, email, celular, linkedin, cidade, estado)
-        cargo = ""
-        indicacoes = ""
-        profile_data = {
+    # função responsável por organizar os dados brutos do perfil do usuário do linkedin em um formato padronizado
+    def format_profile(self, profile, contact_info):
+        nome = f"{profile.get('firstName', 'N/A')} {profile.get('lastName', 'N/A')}"
+        experiencia = profile.get('experience', [{}])[0]
+        organizacao = experiencia.get('companyName', 'N/A')
+        funcao = experiencia.get('title', 'N/A')
+        email = contact_info.get('email_address', 'N/A')
+        celular = contact_info.get('phone_numbers', [{}])[0].get('number', 'N/A')
+        linkedin = f"www.linkedin.com/in/{profile.get('public_id', '')}"
+        cidade = profile.get('geoLocationName', 'N/A').split(',')[0].strip() if profile.get(
+            'geoLocationName') else 'N/A'
+        estado = profile.get('geoLocationName', 'N/A').split(',')[1].strip() if ',' in profile.get('geoLocationName','') else 'N/A'
+        return {
             'nome': nome,
             'organizacao': organizacao,
             'funcao': funcao,
@@ -50,14 +53,4 @@ class Service:
             'linkedin': linkedin,
             'cidade': cidade,
             'estado': estado
-
         }
-
-        return profile_data
-
-        # GET a profiles contact info
-
-        print("Informações de contatos:", contact_info)
-        """
-        # GET 1st degree connections of a given profile
-        connections = api.get_profile_connections('1234asc12304')"""
