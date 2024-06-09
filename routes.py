@@ -14,7 +14,7 @@ def profile_url():
             return jsonify({'error': 'Invalid input, "data" key is missing'}), 400
 
         data_str = data['data']
-
+        print(data_str)
         # chamar o serviço para obter os dados do perfil
         profile_data = service.get_profile(data_str)
 
