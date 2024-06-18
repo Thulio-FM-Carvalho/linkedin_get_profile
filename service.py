@@ -102,8 +102,18 @@ class Service:
                 'geoLocationName') else 'N/A'
             estado = obj.get('geoLocationName', 'N/A').split(',')[1].strip() if ',' in obj.get('geoLocationName',
                                                                                                '') else 'N/A'
-            email = contact[0].get('email_address', 'N/A')
-            telefone = contact[0].get('phone_numbers', [{}])[0].get('number', 'N/A')
+            if contact:
+                # Verifica se o email existe no primeiro dicionário da lista 'contact'
+                if 'email_address' in contact[0]:
+                    email = contact[0].get('email_address', 'N/A')
+                else:
+                    email = 'N/A'
+
+                # Verifica se 'phone_numbers' existe, não está vazio e se o primeiro item contém a chave 'number'
+                if 'phone_numbers' in contact[0] and contact[0]['phone_numbers']:
+                    telefone = contact[0]['phone_numbers'][0].get('number', 'N/A')
+                else:
+                    telefone = 'N/A'
 
             # Adiciona as informações à lista de objetos
             obje.append(nome)
@@ -133,7 +143,7 @@ class Service:
             obje.append(perfil)
 
         # Define as chaves desejadas para os objetos filtrados
-        chaves_desejadas = {"cidade", "email", "estado", "funcao", "linkedin", "nome", "organizacao"}
+        chaves_desejadas = {"cidade", "email", "estado", "funcao", "linkedin", "nome", "organizacao", "telefone"}
 
         """
         Aqui, é feita uma compreensão de lista para filtrar os objetos contidos em obje. Cada objeto é verificado 
